@@ -28,7 +28,7 @@ jobs:
         run: docker build -t fondos-api .
 
       - name: Tag Docker image
-        run: docker tag fondos-api:latest ${{ secrets.ECR_REPO_URI }}:latest
+        run: docker tag fondos-api:latest public.ecr.aws/h7b2e7k1/casv/fondos-api:latest
 
       - name: Push Docker image to Amazon ECR Public
-        run: docker push ${{ secrets.ECR_REPO_URI }}:latest
+        run: docker push public.ecr.aws/h7b2e7k1/casv/fondos-api:latest
