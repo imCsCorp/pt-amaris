@@ -1,12 +1,13 @@
 package com.camilosoto.prueba_tecnica.web.controllers;
 
 import com.camilosoto.prueba_tecnica.domain.services.FundService;
+import com.camilosoto.prueba_tecnica.domain.services.NotificationService;
 import com.camilosoto.prueba_tecnica.domain.services.TransactionService;
+import com.camilosoto.prueba_tecnica.web.dto.FundActionRequest;
 import com.camilosoto.prueba_tecnica.domain.services.UserService;
 import com.camilosoto.prueba_tecnica.persistence.models.Fund;
 import com.camilosoto.prueba_tecnica.persistence.models.Transaction;
 import com.camilosoto.prueba_tecnica.persistence.models.User;
-import lombok.Data;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class FundController {
     private FundService fundService;
     private UserService userService;
     private TransactionService transactionService;
-
+    private NotificationService notificationService;
 
     @GetMapping
     public ResponseEntity<List<Fund>> getAllFunds() {
@@ -60,6 +61,8 @@ public class FundController {
 
         transactionService.save(transaction);
 
+        notificationService.notify(user, "Te has suscrito al fondo: " + fund.getName(), request.getNotificationType());
+
         return ResponseEntity.ok("Suscripción realizada con éxito");
     }
 
@@ -89,9 +92,4 @@ public class FundController {
         return ResponseEntity.ok("Cancelación realizada con éxito");
     }
 
-    @Data
-    public static class FundActionRequest {
-        private String userId;
-        private int fundId;
-    }
 }
