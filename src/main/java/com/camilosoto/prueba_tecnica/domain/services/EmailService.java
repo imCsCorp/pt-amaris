@@ -36,7 +36,7 @@ public class EmailService {
         SendEmailRequest request = SendEmailRequest.builder()
                 .destination(destination)
                 .message(message)
-                .source("tu-correo-verificado@dominio.com") // debe estar verificado en SES
+                .source("alejandro.vega.lims@gmail.com") // debe estar verificado en SES
                 .build();
 
         sesClient.sendEmail(request);

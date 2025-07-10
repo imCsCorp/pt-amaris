@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.camilosoto</groupId>
     <artifactId>prueba-tecnica</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>prueba-tecnica</name>
     <description>Prueba tecnica camilo alejandro soto vega</description>
     <url/>
