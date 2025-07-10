@@ -105,7 +105,7 @@ docker push <tu_id>.dkr.ecr.us-east-1.amazonaws.com/fondos-api:latest
 
 ```bash
 aws cloudformation deploy \
-  --template-file cloudformation.yml \
+  --template-file cloudformation.yaml \
   --stack-name fondos-api-stack \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides ImageUri=<tu_id>.dkr.ecr.us-east-1.amazonaws.com/fondos-api:latest

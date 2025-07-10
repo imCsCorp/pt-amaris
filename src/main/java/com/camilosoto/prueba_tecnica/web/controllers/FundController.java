@@ -8,6 +8,7 @@ import com.camilosoto.prueba_tecnica.domain.services.UserService;
 import com.camilosoto.prueba_tecnica.persistence.models.Fund;
 import com.camilosoto.prueba_tecnica.persistence.models.Transaction;
 import com.camilosoto.prueba_tecnica.persistence.models.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +21,13 @@ import java.util.UUID;
 @RequestMapping("/funds")
 @CrossOrigin
 public class FundController {
+    @Autowired
     private FundService fundService;
+    @Autowired
     private UserService userService;
+    @Autowired
     private TransactionService transactionService;
+    @Autowired
     private NotificationService notificationService;
 
     @GetMapping
