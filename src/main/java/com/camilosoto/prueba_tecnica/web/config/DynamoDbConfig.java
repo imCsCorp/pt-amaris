@@ -19,7 +19,7 @@ public class DynamoDbConfig {
     @Bean
     public DynamoDbClient dynamoDbClient() {
         return DynamoDbClient.builder()
-                .region(Region.of("us-east-1")) // Puedes parametrizar si lo deseas
+                .region(Region.of("us-east-1"))
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
     }
