@@ -42,6 +42,6 @@ jobs:
       - name: ECS Deploy
         run: |
           aws cloudformation deploy \
-            --template-file backend-infra.yml \
+            --template-file backend-infra.yaml \
             --stack-name funds-api-infra \
             --capabilities CAPABILITY_NAMED_IAM
