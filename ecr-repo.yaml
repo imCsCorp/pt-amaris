@@ -1,6 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Repositorio público ECR para backend
 
+Parameters:
+  RepositoryUri:
+    Type: String
+    Default: public.ecr.aws/a6t3n9v6/casv/funds-api
+    Description: URI del repositorio público (manual)
+
 Resources:
   BackendPublicEcr:
     Type: AWS::ECR::PublicRepository
@@ -10,4 +16,4 @@ Resources:
 Outputs:
   BackendRepositoryUri:
     Description: URI del repositorio público de backend
-    Value: !Ref BackendPublicEcr
+    Value: !Ref RepositoryUri
