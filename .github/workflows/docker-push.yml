@@ -21,7 +21,7 @@ jobs:
       - name: ECR para backend
         run: |
           aws cloudformation deploy \
-            --template-file ecr-repo.yml \
+            --template-file ecr-repo.yaml \
             --stack-name funds-api-repo \
             --capabilities CAPABILITY_NAMED_IAM
 
