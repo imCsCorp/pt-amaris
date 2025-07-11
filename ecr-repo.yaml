@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Repositorio público ECR para backend
+
+Resources:
+  BackendPublicEcr:
+    Type: AWS::ECR::PublicRepository
+    Properties:
+      RepositoryName: casv/funds-api
+
+  FrontendPublicEcr:
+    Type: AWS::ECR::PublicRepository
+    Properties:
+      RepositoryName: casv/funds-client
