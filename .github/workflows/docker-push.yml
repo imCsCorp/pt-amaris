@@ -65,6 +65,16 @@ jobs:
       - name: Tag Docker image
         run: docker tag funds-api:latest ${{ env.REPO_URI }}:latest
 
+      - name: Obtener URI del repositorio público
+        id: get-repo-uri
+        run: |
+          URI=$(aws cloudformation describe-stacks \
+            --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='BackendRepositoryUri'].OutputValue" \
+            --output text)
+          echo "REPO_URI=$URI" >> $GITHUB_ENV
+          echo "Repository URI: $URI"
+
       - name: Push Docker image
         run: docker push ${{ env.REPO_URI }}:latest
 
