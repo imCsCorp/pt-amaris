@@ -22,35 +22,21 @@ Este proyecto es una API REST desarrollada en **Java Spring Boot**. La solución
 ## 📁 Estructura del proyecto
 
 ```
-src/
-└── main/
-    └── java/com/camilosoto/prueba_tecnica/
-        ├── domain/services/      # Lógica de negocio
-        │   ├── EmailService.java
-        │   ├── FundService.java
-        │   ├── NotificationService.java
-        │   └── ...
-        │
-        ├── persistence/          # Acceso a datos y modelos DynamoDB
-        │   ├── models/
-        │   │   ├── Fund.java
-        │   │   ├── Transaction.java
-        │   │   └── User.java
-        │   ├── FundRepository.java
-        │   ├── TransactionRepository.java
-        │   └── UserRepository.java
-        │
-        ├── web/                  # Capa web (API REST y config)
-        │   ├── config/
-        │   │   ├── DynamoDbConfig.java
-        │   │   ├── SesConfig.java
-        │   │   └── SnsConfig.java
-        │   ├── controllers/
-        │   │   └── FundController.java
-        │   └── dto/
-        │       └── FundActionRequest.java
-        │
-        └── PruebaTecnicaApplication.java
+├── src/main/java/com/camilosoto/prueba_tecnica
+│   ├── persistence/           # Acceso a datos
+│   ├── persistence/models     # modelos DynamoDB
+│   ├── domain/services/       # Lógica de negocio
+│   ├── web/config/            # configurations
+│   ├── web/controllers/       # Controladores REST
+│   └── seeder/                # Seeder de datos iniciales
+├── resources/
+│   └── application.properties
+├── PruebaTecnicaApplication.java
+├── Dockerfile
+├── backend-infra.yaml         # Infraestructura (ECS, VPC, DynamoDB)
+├── ecr-repo.yaml              # Repositorio ECR público
+├── .github/workflows/deploy.yml
+└── README.md
 ```
 
 ---
@@ -76,39 +62,47 @@ Se envían automáticamente tras cada vinculación o cancelación usando:
 
 ---
 
-## 🐳 Ejecutar localmente con Docker
+### Ejecutar localmente
 
 ```bash
-docker-compose up --build
+docker build -t funds-api .
+docker run -p 8080:8080 \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=<tu-access-key> \
+  -e AWS_SECRET_ACCESS_KEY=<tu-secret-key> \
+  funds-api
 ```
+## ☁️ Despliegue automático
 
----
+Este repositorio incluye despliegue automático mediante **GitHub Actions**:
 
-## 📦 Subir imagen a AWS ECR
-
-```bash
-# Login en ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <tu_id>.dkr.ecr.us-east-1.amazonaws.com
-
-# Crear repositorio (solo 1 vez)
-aws ecr create-repository --repository-name fondos-api
-
-# Build + tag + push
-docker build -t fondos-api .
-docker tag fondos-api:latest <tu_id>.dkr.ecr.us-east-1.amazonaws.com/fondos-api:latest
-docker push <tu_id>.dkr.ecr.us-east-1.amazonaws.com/fondos-api:latest
-```
-
----
-
-## ☁️ Desplegar en AWS con CloudFormation
+### 1. Crear repositorio público en ECR
 
 ```bash
 aws cloudformation deploy \
-  --template-file cloudformation.yaml \
-  --stack-name fondos-api-stack \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides ImageUri=<tu_id>.dkr.ecr.us-east-1.amazonaws.com/fondos-api:latest
+  --template-file ecr-repo.yaml \
+  --stack-name funds-api-repo \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+### 2. Construir y subir la imagen
+
+Automáticamente en `main`, o manualmente:
+
+```bash
+docker build -t funds-api .
+docker tag funds-api:latest public.ecr.aws/<id>/casv/funds-api:latest
+docker push public.ecr.aws/<id>/casv/funds-api:latest
+```
+
+### 3. Desplegar en ECS
+
+```bash
+aws cloudformation deploy \
+  --template-file backend-infra.yaml \
+  --stack-name funds-api-infra \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides ImageUri=public.ecr.aws/<id>/casv/funds-api:latest
 ```
 
 ---
@@ -130,7 +124,22 @@ export AWS_REGION=us-east-1
 - El código sigue principios de **clean code** y separación de responsabilidades
 - Utiliza `@DynamoDbBean` y `DynamoDbEnhancedClient` para acceso a DynamoDB
 - Los modelos usan **Lombok** para reducir boilerplate
-- La infraestructura completa puede ser reimplementada con solo 1 archivo (`cloudformation.yml`)
+
+---
+
+## 🌐 Acceso al backend
+
+Una vez desplegado:
+
+```bash
+http://<IP_PUBLICA>:8080/
+```
+
+Puedes obtener la IP desde la consola ECS o con:
+
+```bash
+aws ecs list-tasks --cluster funds-api-cluster
+```
 
 ---
 
