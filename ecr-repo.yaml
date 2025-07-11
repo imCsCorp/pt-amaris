@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Repositorio público ECR para backend
+Description: Repositorios públicos ECR para backend y frontend
 
 Resources:
   BackendPublicEcr:
@@ -7,7 +7,7 @@ Resources:
     Properties:
       RepositoryName: casv/funds-api
 
-  FrontendPublicEcr:
-    Type: AWS::ECR::PublicRepository
-    Properties:
-      RepositoryName: casv/funds-client
+Outputs:
+  BackendRepositoryUri:
+    Description: URI del repositorio público de backend
+    Value: !GetAtt BackendPublicEcr.RepositoryUri

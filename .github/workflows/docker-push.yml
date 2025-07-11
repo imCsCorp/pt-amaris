@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,12 +19,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: ECR para backend
+      - name: Crear repositorios ECR públicos (si no existen)
         run: |
           aws cloudformation deploy \
             --template-file ecr-repo.yaml \
             --stack-name funds-api-repo \
             --capabilities CAPABILITY_NAMED_IAM
+
+      - name: Obtener URI del repositorio público ECR
+        id: ecr-uri
+        run: |
+          URI=$(aws ecr-public describe-repositories \
+            --query "repositories[?repositoryName=='casv/funds-api'].repositoryUri" \
+            --output text)
+          echo "repository_uri=$URI" >> $GITHUB_OUTPUT
 
       - name: Login to Amazon ECR Public
         uses: aws-actions/amazon-ecr-login@v2
@@ -34,15 +43,15 @@ jobs:
         run: docker build -t funds-api .
 
       - name: Tag Docker image
-        run: docker tag funds-api:latest public.ecr.aws/a6t3n9v6/casv/funds-api:latest
+        run: docker tag funds-api:latest ${{ steps.ecr-uri.outputs.repository_uri }}:latest
 
       - name: Push Docker image
-        run: docker push public.ecr.aws/a6t3n9v6/casv/funds-api:latest
+        run: docker push ${{ steps.ecr-uri.outputs.repository_uri }}:latest
 
-      - name: ECS Deploy
+      - name: Deploy infraestructura ECS con CloudFormation
         run: |
           aws cloudformation deploy \
             --template-file backend-infra.yaml \
             --stack-name funds-api-infra \
             --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides ImageUri=public.ecr.aws/a6t3n9v6/casv/funds-api:latest
+            --parameter-overrides ImageUri=${{ steps.ecr-uri.outputs.repository_uri }}:latest
