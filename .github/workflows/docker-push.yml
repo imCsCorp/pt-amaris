@@ -44,4 +44,5 @@ jobs:
           aws cloudformation deploy \
             --template-file backend-infra.yaml \
             --stack-name funds-api-infra \
-            --capabilities CAPABILITY_NAMED_IAM
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides ImageUri=public.ecr.aws/a6t3n9v6/casv/funds-api:latest
