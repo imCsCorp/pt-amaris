@@ -21,7 +21,7 @@ jobs:
       - name: Deploy CloudFormation (Backend Infra)
         run: |
           aws cloudformation deploy \
-            --template-file cloudformation-backend.yml \
+            --template-file cloudformation-backend.yaml \
             --stack-name funds-api \
             --capabilities CAPABILITY_NAMED_IAM
 
