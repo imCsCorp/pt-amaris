@@ -34,10 +34,10 @@ jobs:
         run: docker build -t funds-api .
 
       - name: Tag Docker image
-        run: docker tag funds-api:latest public.ecr.aws/h7b2e7k1/casv/funds-api:latest
+        run: docker tag funds-api:latest public.ecr.aws/a6t3n9v6/casv/funds-api:latest
 
       - name: Push Docker image
-        run: docker push public.ecr.aws/h7b2e7k1/casv/funds-api:latest
+        run: docker push public.ecr.aws/a6t3n9v6/casv/funds-api:latest
 
       - name: ECS Deploy
         run: |
