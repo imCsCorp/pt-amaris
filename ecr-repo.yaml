@@ -10,4 +10,4 @@ Resources:
 Outputs:
   BackendRepositoryUri:
     Description: URI del repositorio público de backend
-    Value: !GetAtt BackendPublicEcr.RepositoryUri
+    Value: !Ref BackendPublicEcr
