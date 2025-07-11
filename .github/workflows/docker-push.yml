@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      STACK_NAME: funds-api-repo
 
     steps:
       - name: Checkout code
@@ -19,20 +22,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Crear repositorios ECR públicos (si no existen)
+      - name: Crear repositorio ECR público (CloudFormation)
         run: |
           aws cloudformation deploy \
             --template-file ecr-repo.yaml \
-            --stack-name funds-api-repo \
+            --stack-name $STACK_NAME \
             --capabilities CAPABILITY_NAMED_IAM
 
-      - name: Obtener URI del repositorio público ECR
-        id: ecr-uri
+      - name: Obtener URI del repositorio público
+        id: get-repo-uri
         run: |
-          URI=$(aws ecr-public describe-repositories \
-            --query "repositories[?repositoryName=='casv/funds-api'].repositoryUri" \
+          URI=$(aws cloudformation describe-stacks \
+            --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='BackendRepositoryUri'].OutputValue" \
             --output text)
-          echo "repository_uri=$URI" >> $GITHUB_OUTPUT
+          echo "REPO_URI=$URI" >> $GITHUB_ENV
+          echo "Repository URI: $URI"
 
       - name: Login to Amazon ECR Public
         uses: aws-actions/amazon-ecr-login@v2
@@ -43,15 +48,15 @@ jobs:
         run: docker build -t funds-api .
 
       - name: Tag Docker image
-        run: docker tag funds-api:latest ${{ steps.ecr-uri.outputs.repository_uri }}:latest
+        run: docker tag funds-api:latest ${{ env.REPO_URI }}:latest
 
       - name: Push Docker image
-        run: docker push ${{ steps.ecr-uri.outputs.repository_uri }}:latest
+        run: docker push ${{ env.REPO_URI }}:latest
 
-      - name: Deploy infraestructura ECS con CloudFormation
+      - name: Desplegar infraestructura backend (CloudFormation)
         run: |
           aws cloudformation deploy \
             --template-file backend-infra.yaml \
             --stack-name funds-api-infra \
             --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides ImageUri=${{ steps.ecr-uri.outputs.repository_uri }}:latest
+            --parameter-overrides ImageUri=${{ env.REPO_URI }}:latest

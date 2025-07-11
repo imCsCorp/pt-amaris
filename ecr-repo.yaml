@@ -11,3 +11,5 @@ Outputs:
   BackendRepositoryUri:
     Description: URI del repositorio público de backend
     Value: !GetAtt BackendPublicEcr.RepositoryUri
+    Export:
+      Name: BackendRepositoryUri
