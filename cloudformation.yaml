@@ -1,24 +1,48 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Infraestructura para prueba tecnica - ECS Fargate + DynamoDB
+Description: Infraestructura completa para prueba técnica (Backend + Frontend en ECS Fargate + DynamoDB)
 
 Parameters:
-  ImageUri:
+  BackendImageUri:
     Type: String
-    Default: public.ecr.aws/h7b2e7k1/casv/fondos-api:latest
-    Description: URI pública de la imagen Docker en Amazon ECR Public
+    Default: public.ecr.aws/h7b2e7k1/casv/funds-api:latest
+    Description: URI pública del backend (Spring Boot)
+
+  FrontendImageUri:
+    Type: String
+    Default: public.ecr.aws/h7b2e7k1/casv/funds-client:latest
+    Description: URI pública del frontend (Angular)
 
 Resources:
 
-  FondosLogGroup:
+  ### 🐳 Repositorios públicos
+  BackendPublicEcr:
+    Type: AWS::ECR::PublicRepository
+    Properties:
+      RepositoryName: funds-api
+
+  FrontendPublicEcr:
+    Type: AWS::ECR::PublicRepository
+    Properties:
+      RepositoryName: funds-client
+
+  ### CloudWatch Logs
+  FundsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/fondos-api
+      LogGroupName: /ecs/funds-api
       RetentionInDays: 7
-  ### 🔐 Rol para ECS Task
+
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/funds-client
+      RetentionInDays: 7
+
+  ### Roles
   TaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: fondos-api-task-execution-role
+      RoleName: funds-api-task-execution-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -32,6 +56,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSESFullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
+  ### Red y Seguridad
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -40,7 +65,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: fondos-vpc
+          Value: funds-vpc
 
   Subnet:
     Type: AWS::EC2::Subnet
@@ -85,27 +110,29 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 8080
+          FromPort: 80
           ToPort: 8080
           CidrIp: 0.0.0.0/0
 
+  ### Cluster ECS
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: fondos-api-cluster
+      ClusterName: funds-api-cluster
 
-  TaskDefinition:
+  ### Task Definitions
+  BackendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: fondos-api-task
+      Family: funds-api-task
       Cpu: 512
       Memory: 1024
       NetworkMode: awsvpc
-      RequiresCompatibilities: [FARGATE]
+      RequiresCompatibilities: [ FARGATE ]
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
-        - Name: fondos-api
-          Image: !Ref ImageUri
+        - Name: funds-api
+          Image: !Ref BackendImageUri
           PortMappings:
             - ContainerPort: 8080
           Environment:
@@ -114,24 +141,61 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/fondos-api
+              awslogs-group: /ecs/funds-api
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
 
-  ECSService:
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: funds-client-task
+      Cpu: 256
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [ FARGATE ]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: funds-client
+          Image: !Ref FrontendImageUri
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/funds-client
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: ecs
+
+  ### Servicios ECS
+  BackendService:
     Type: AWS::ECS::Service
     DependsOn: AttachGateway
     Properties:
       Cluster: !Ref ECSCluster
       LaunchType: FARGATE
       DesiredCount: 1
-      TaskDefinition: !Ref TaskDefinition
+      TaskDefinition: !Ref BackendTaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
-          SecurityGroups: [!Ref SecurityGroup]
-          Subnets: [!Ref Subnet]
+          SecurityGroups: [ !Ref SecurityGroup ]
+          Subnets: [ !Ref Subnet ]
 
+  FrontendService:
+    Type: AWS::ECS::Service
+    DependsOn: AttachGateway
+    Properties:
+      Cluster: !Ref ECSCluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref FrontendTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups: [ !Ref SecurityGroup ]
+          Subnets: [ !Ref Subnet ]
+
+  ### DynamoDB
   UserTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -169,14 +233,16 @@ Resources:
       BillingMode: PAY_PER_REQUEST
 
 Outputs:
-  PublicCluster:
+  ClusterName:
     Description: ECS Cluster
     Value: !Ref ECSCluster
-  Service:
-    Description: ECS Service
-    Value: !Ref ECSService
-  LogGroup:
-    Description: CloudWatch Log Group
-    Value: /ecs/fondos-api
-  Tables:
+  BackendService:
+    Description: Backend Service (funds-api)
+    Value: !Ref BackendService
+  FrontendService:
+    Description: Frontend Service (funds-client)
+    Value: !Ref FrontendService
+  DynamoDBTables:
     Value: User, Fund, Transaction
+  PublicECRRepositories:
+    Value: funds-api, funds-client

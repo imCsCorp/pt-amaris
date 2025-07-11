@@ -4,6 +4,7 @@ import com.camilosoto.prueba_tecnica.persistence.models.User;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,6 +18,10 @@ public class UserRepository {
 
     public void save(User user) {
         userTable.putItem(user);
+    }
+
+    public List<User> findAll() {
+        return userTable.scan().items().stream().toList();
     }
 
     public Optional<User> findById(String id) {

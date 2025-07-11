@@ -25,10 +25,10 @@ jobs:
           registry-type: public
 
       - name: Build Docker image
-        run: docker build -t fondos-api .
+        run: docker build -t funds-api .
 
       - name: Tag Docker image
-        run: docker tag fondos-api:latest public.ecr.aws/h7b2e7k1/casv/fondos-api:latest
+        run: docker tag funds-api:latest public.ecr.aws/a6t3n9v6/funds-api:latest
 
       - name: Push Docker image to Amazon ECR Public
-        run: docker push public.ecr.aws/h7b2e7k1/casv/fondos-api:latest
+        run: docker push public.ecr.aws/a6t3n9v6/funds-api:latest
