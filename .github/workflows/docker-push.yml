@@ -1,14 +1,15 @@
-name: Deploy - funds-api
+name: Build and Deploy Backend to AWS
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  deploy:
+  build-deploy-backend:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
@@ -17,13 +18,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
-      - name: Deploy CloudFormation (Backend Infra)
-        run: |
-          aws cloudformation deploy \
-            --template-file cloudformation-backend.yaml \
-            --stack-name funds-api \
-            --capabilities CAPABILITY_NAMED_IAM
 
       - name: Login to Amazon ECR Public
         uses: aws-actions/amazon-ecr-login@v2
@@ -36,12 +30,13 @@ jobs:
       - name: Tag Docker image
         run: docker tag funds-api:latest public.ecr.aws/h7b2e7k1/casv/funds-api:latest
 
-      - name: Push Docker image
+      - name: Push Docker image to Amazon ECR Public
         run: docker push public.ecr.aws/h7b2e7k1/casv/funds-api:latest
 
-      - name: Force ECS redeploy
+      - name: Deploy CloudFormation (Backend Infra)
         run: |
-          aws ecs update-service \
-            --cluster fondos-api-cluster \
-            --service fondos-api-stack-ECSService-XYZ123 \
-            --force-new-deployment
+          aws cloudformation deploy \
+            --stack-name funds-backend-stack \
+            --template-file cloudformation-backend.yml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides ImageUri=public.ecr.aws/h7b2e7k1/casv/funds-api:latest
