@@ -9,6 +9,11 @@ Parameters:
 
 Resources:
 
+  FondosLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/fondos-api
+      RetentionInDays: 7
   ### 🔐 Rol para ECS Task
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -25,8 +30,8 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/AmazonSESFullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
-  ### VPC y Subred pública
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -73,7 +78,6 @@ Resources:
       SubnetId: !Ref Subnet
       RouteTableId: !Ref RouteTable
 
-  ### Security Group
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -85,13 +89,11 @@ Resources:
           ToPort: 8080
           CidrIp: 0.0.0.0/0
 
-  ### Cluster ECS
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: fondos-api-cluster
 
-  ### Task Definition
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -109,8 +111,13 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: us-east-1
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/fondos-api
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: ecs
 
-  ### Servicio Fargate
   ECSService:
     Type: AWS::ECS::Service
     DependsOn: AttachGateway
@@ -125,7 +132,6 @@ Resources:
           SecurityGroups: [!Ref SecurityGroup]
           Subnets: [!Ref Subnet]
 
-  ### DynamoDB Tables
   UserTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -169,5 +175,8 @@ Outputs:
   Service:
     Description: ECS Service
     Value: !Ref ECSService
+  LogGroup:
+    Description: CloudWatch Log Group
+    Value: /ecs/fondos-api
   Tables:
     Value: User, Fund, Transaction
