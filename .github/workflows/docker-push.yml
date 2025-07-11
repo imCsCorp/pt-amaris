@@ -1,13 +1,12 @@
-name: Build and Push to Amazon ECR Public
+name: Deploy - funds-api
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,7 +16,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
+
+      - name: Deploy CloudFormation (Backend Infra)
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation-backend.yml \
+            --stack-name funds-api \
+            --capabilities CAPABILITY_NAMED_IAM
 
       - name: Login to Amazon ECR Public
         uses: aws-actions/amazon-ecr-login@v2
@@ -28,7 +34,14 @@ jobs:
         run: docker build -t funds-api .
 
       - name: Tag Docker image
-        run: docker tag funds-api:latest public.ecr.aws/a6t3n9v6/funds-api:latest
+        run: docker tag funds-api:latest public.ecr.aws/h7b2e7k1/casv/funds-api:latest
 
-      - name: Push Docker image to Amazon ECR Public
-        run: docker push public.ecr.aws/a6t3n9v6/funds-api:latest
+      - name: Push Docker image
+        run: docker push public.ecr.aws/h7b2e7k1/casv/funds-api:latest
+
+      - name: Force ECS redeploy
+        run: |
+          aws ecs update-service \
+            --cluster fondos-api-cluster \
+            --service fondos-api-stack-ECSService-XYZ123 \
+            --force-new-deployment
