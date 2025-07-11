@@ -20,19 +20,19 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Eliminar stack si está en ROLLBACK_COMPLETE
         run: |
           STATUS=$(aws cloudformation describe-stacks \
-            --stack-name funds-api-repo \
+            --stack-name $STACK_NAME \
             --query "Stacks[0].StackStatus" \
             --output text || echo "NOT_FOUND")
 
           if [ "$STATUS" = "ROLLBACK_COMPLETE" ]; then
             echo "Eliminando stack existente con estado ROLLBACK_COMPLETE..."
-            aws cloudformation delete-stack --stack-name funds-api-repo
-            aws cloudformation wait stack-delete-complete --stack-name funds-api-repo
+            aws cloudformation delete-stack --stack-name $STACK_NAME
+            aws cloudformation wait stack-delete-complete --stack-name $STACK_NAME
           else
             echo "Stack no requiere eliminación. Estado actual: $STATUS"
           fi

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Repositorios públicos ECR para backend y frontend
+Description: Repositorio público ECR para backend
 
 Resources:
   BackendPublicEcr:
@@ -11,5 +11,3 @@ Outputs:
   BackendRepositoryUri:
     Description: URI del repositorio público de backend
     Value: !GetAtt BackendPublicEcr.RepositoryUri
-    Export:
-      Name: BackendRepositoryUri
